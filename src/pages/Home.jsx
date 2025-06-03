@@ -20,8 +20,6 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fileProcessor = new FileProcessor();
-
   const handleFolderSelect = useCallback(async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
@@ -30,6 +28,7 @@ function Home() {
     setError(null);
 
     try {
+      const fileProcessor = new FileProcessor();
       const result = await fileProcessor.processFiles(files);
       setFileData(result);
     } catch (err) {
