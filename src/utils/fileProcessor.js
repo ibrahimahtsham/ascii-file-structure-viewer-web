@@ -35,6 +35,14 @@ export class FileProcessor {
     const startTime = performance.now();
     const debug = onDebug || console.log;
 
+    // Track phase timings
+    const phaseTimings = {
+      filtering: 0,
+      processing: 0,
+      building: 0,
+      ascii: 0,
+    };
+
     debug(`🚀 Starting file processing with ${files.length} files`);
 
     const fileStructure = [];
@@ -48,7 +56,7 @@ export class FileProcessor {
 
     // Immediate progress report
     if (onProgress) {
-      onProgress(0, 0, files.length);
+      onProgress(0, 0, files.length, phaseTimings);
       await this.yieldControl();
     }
 
@@ -57,7 +65,7 @@ export class FileProcessor {
 
     // Filter files in chunks with proper progress reporting
     const validFiles = [];
-    const filterBatchSize = 100; // Larger batch for filtering
+    const filterBatchSize = 100;
 
     for (let i = 0; i < files.length; i += filterBatchSize) {
       const batch = files.slice(i, i + filterBatchSize);
@@ -72,13 +80,16 @@ export class FileProcessor {
           ((i + filterBatchSize) / files.length) * 5,
           5
         );
-        onProgress(filterProgress, 0, files.length);
+        phaseTimings.filtering = (performance.now() - filterStartTime) / 1000;
+        onProgress(filterProgress, 0, files.length, phaseTimings);
       }
 
       await this.yieldControl();
     }
 
     const filterTime = performance.now() - filterStartTime;
+    phaseTimings.filtering = filterTime / 1000;
+
     debug(
       `✅ Filtered ${files.length} files to ${
         validFiles.length
@@ -88,13 +99,14 @@ export class FileProcessor {
     if (validFiles.length === 0) {
       debug("⚠️ No valid files found after filtering");
       if (onProgress) {
-        onProgress(100, 0, 0);
+        onProgress(100, 0, 0, phaseTimings);
       }
       return {
         structure: {},
         stats: {
           ...stats,
           processingTime: (performance.now() - startTime) / 1000,
+          phaseTimings,
         },
         asciiTree: "",
       };
@@ -104,6 +116,8 @@ export class FileProcessor {
     debug(
       `📊 Processing ${validFiles.length} files in batches of ${this.batchSize}`
     );
+
+    const processingStartTime = performance.now();
     let processedCount = 0;
 
     for (let i = 0; i < validFiles.length; i += this.batchSize) {
@@ -125,7 +139,9 @@ export class FileProcessor {
         // Update progress for each file (5% to 90% of total progress)
         if (onProgress) {
           const progress = 5 + (processedCount / validFiles.length) * 85;
-          onProgress(progress, processedCount, validFiles.length);
+          phaseTimings.processing =
+            (performance.now() - processingStartTime) / 1000;
+          onProgress(progress, processedCount, validFiles.length, phaseTimings);
         }
 
         // Yield control every few files
@@ -138,19 +154,23 @@ export class FileProcessor {
       await this.yieldControl();
     }
 
+    phaseTimings.processing = (performance.now() - processingStartTime) / 1000;
+
     debug("🏗️ Building tree structure...");
     const treeStartTime = performance.now();
     if (onProgress) {
-      onProgress(90, validFiles.length, validFiles.length);
+      onProgress(90, validFiles.length, validFiles.length, phaseTimings);
       await this.yieldControl();
     }
 
     const structure = this.buildTreeStructure(fileStructure);
     const treeTime = performance.now() - treeStartTime;
+    phaseTimings.building = treeTime / 1000;
+
     debug(`✅ Tree structure built in ${treeTime.toFixed(2)}ms`);
 
     if (onProgress) {
-      onProgress(95, validFiles.length, validFiles.length);
+      onProgress(95, validFiles.length, validFiles.length, phaseTimings);
       await this.yieldControl();
     }
 
@@ -158,6 +178,8 @@ export class FileProcessor {
     const asciiStartTime = performance.now();
     const asciiTree = this.generateAsciiTree(fileStructure);
     const asciiTime = performance.now() - asciiStartTime;
+    phaseTimings.ascii = asciiTime / 1000;
+
     debug(`✅ ASCII tree generated in ${asciiTime.toFixed(2)}ms`);
 
     const endTime = performance.now();
@@ -167,19 +189,13 @@ export class FileProcessor {
       `🎉 Processing complete! Total time: ${totalProcessingTime.toFixed(3)}s`
     );
     debug(`📈 Performance breakdown:
-      - Filtering: ${filterTime.toFixed(2)}ms
-      - File processing: ${(
-        endTime -
-        filterStartTime -
-        filterTime -
-        treeTime -
-        asciiTime
-      ).toFixed(2)}ms
-      - Tree building: ${treeTime.toFixed(2)}ms
-      - ASCII generation: ${asciiTime.toFixed(2)}ms`);
+      - Filtering: ${(phaseTimings.filtering * 1000).toFixed(2)}ms
+      - File processing: ${(phaseTimings.processing * 1000).toFixed(2)}ms
+      - Tree building: ${(phaseTimings.building * 1000).toFixed(2)}ms
+      - ASCII generation: ${(phaseTimings.ascii * 1000).toFixed(2)}ms`);
 
     if (onProgress) {
-      onProgress(100, validFiles.length, validFiles.length);
+      onProgress(100, validFiles.length, validFiles.length, phaseTimings);
     }
 
     return {
@@ -187,11 +203,13 @@ export class FileProcessor {
       stats: {
         ...stats,
         processingTime: totalProcessingTime,
+        phaseTimings,
       },
       asciiTree,
     };
   }
 
+  // ... rest of the methods remain the same
   async yieldControl() {
     return new Promise((resolve) => setTimeout(resolve, this.yieldInterval));
   }
