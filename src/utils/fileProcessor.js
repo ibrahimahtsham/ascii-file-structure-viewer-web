@@ -29,6 +29,11 @@ export class FileProcessor {
     ]);
     this.batchSize = 5;
     this.yieldInterval = 1;
+    this.customIgnorePatterns = [];
+  }
+
+  setCustomIgnorePatterns(patterns) {
+    this.customIgnorePatterns = patterns;
   }
 
   async processFiles(files, onProgress = null, onDebug = null) {
@@ -60,41 +65,19 @@ export class FileProcessor {
       await this.yieldControl();
     }
 
-    debug("📁 Filtering files...");
+    debug("📁 Processing selected files...");
     const filterStartTime = performance.now();
 
-    // Filter files in chunks with proper progress reporting
-    const validFiles = [];
-    const filterBatchSize = 100;
-
-    for (let i = 0; i < files.length; i += filterBatchSize) {
-      const batch = files.slice(i, i + filterBatchSize);
-      const filteredBatch = batch.filter(
-        (file) => !this.shouldIgnoreFile(file.webkitRelativePath)
-      );
-      validFiles.push(...filteredBatch);
-
-      // Update progress during filtering (first 5% of total progress)
-      if (onProgress) {
-        const filterProgress = Math.min(
-          ((i + filterBatchSize) / files.length) * 5,
-          5
-        );
-        phaseTimings.filtering = (performance.now() - filterStartTime) / 1000;
-        onProgress(filterProgress, 0, files.length, phaseTimings);
-      }
-
-      await this.yieldControl();
-    }
+    // Since files are already pre-filtered by user selection,
+    // we can skip the filtering phase or do minimal filtering
+    const validFiles = files.filter((file) => {
+      return file.size < 10 * 1024 * 1024; // Skip files larger than 10MB
+    });
 
     const filterTime = performance.now() - filterStartTime;
     phaseTimings.filtering = filterTime / 1000;
 
-    debug(
-      `✅ Filtered ${files.length} files to ${
-        validFiles.length
-      } valid files in ${filterTime.toFixed(2)}ms`
-    );
+    debug(`✅ Processing ${validFiles.length} user-selected files`);
 
     if (validFiles.length === 0) {
       debug("⚠️ No valid files found after filtering");
@@ -215,7 +198,7 @@ export class FileProcessor {
   }
 
   shouldIgnoreFile(path) {
-    const ignorePaths = [
+    const defaultIgnorePaths = [
       "node_modules/",
       ".git/",
       "__pycache__/",
@@ -231,8 +214,17 @@ export class FileProcessor {
       "obj/",
       ".vs/",
       ".venv/",
+      ".gitignore",
+      "eslint.config.js",
+      "package-lock.json",
+      "package.json",
     ];
-    return ignorePaths.some((ignore) => path.includes(ignore));
+
+    const allIgnorePaths = [
+      ...defaultIgnorePaths,
+      ...this.customIgnorePatterns,
+    ];
+    return allIgnorePaths.some((ignore) => path.includes(ignore));
   }
 
   async processFile(file, debug) {

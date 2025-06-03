@@ -18,6 +18,8 @@ export const useFileProcessor = () => {
     },
   });
   const [debugLogs, setDebugLogs] = useState([]);
+  const [showSelectionModal, setShowSelectionModal] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
   const fileInputRef = useRef(null);
 
   const addDebugLog = useCallback((message) => {
@@ -26,7 +28,7 @@ export const useFileProcessor = () => {
   }, []);
 
   const processFiles = useCallback(
-    async (files) => {
+    async (files, customIgnorePatterns = []) => {
       if (files.length === 0) return;
 
       // Clear previous data immediately
@@ -42,13 +44,24 @@ export const useFileProcessor = () => {
       });
 
       // Add first debug log immediately and force UI update
-      addDebugLog(`🎯 User selected folder with ${files.length} files`);
+      addDebugLog(`🎯 User selected ${files.length} files for processing`);
+      if (customIgnorePatterns.length > 0) {
+        addDebugLog(
+          `🚫 Using custom ignore patterns: ${customIgnorePatterns.join(", ")}`
+        );
+      }
 
       // Force React to update the UI immediately
       await new Promise((resolve) => setTimeout(resolve, UI_UPDATE_DELAY));
 
       try {
         const fileProcessor = new FileProcessor();
+
+        // Set custom ignore patterns if provided
+        if (customIgnorePatterns.length > 0) {
+          fileProcessor.setCustomIgnorePatterns(customIgnorePatterns);
+        }
+
         const result = await fileProcessor.processFiles(
           files,
           (percent, current, total, phaseTimings) => {
@@ -82,13 +95,33 @@ export const useFileProcessor = () => {
     [addDebugLog]
   );
 
-  const handleFolderSelect = useCallback(
-    async (event) => {
-      const files = Array.from(event.target.files);
-      await processFiles(files);
+  const handleFolderSelect = useCallback(async (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+
+    // Show selection modal instead of processing immediately
+    setPendingFiles(files);
+    setShowSelectionModal(true);
+  }, []);
+
+  const handleSelectionConfirm = useCallback(
+    async (selectedFiles, ignorePatterns) => {
+      setShowSelectionModal(false);
+      setPendingFiles([]);
+      await processFiles(selectedFiles, ignorePatterns);
     },
     [processFiles]
   );
+
+  const handleSelectionCancel = useCallback(() => {
+    setShowSelectionModal(false);
+    setPendingFiles([]);
+
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
 
   return {
     fileData,
@@ -97,6 +130,10 @@ export const useFileProcessor = () => {
     progress,
     debugLogs,
     fileInputRef,
+    showSelectionModal,
+    pendingFiles,
     handleFolderSelect,
+    handleSelectionConfirm,
+    handleSelectionCancel,
   };
 };

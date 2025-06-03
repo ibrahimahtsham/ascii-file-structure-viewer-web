@@ -5,6 +5,7 @@ import UploadSection from "./components/UploadSection";
 import ProgressSection from "./components/ProgressSection";
 import DebugConsole from "./components/DebugConsole";
 import ResultsSection from "./components/ResultsSection";
+import FileSelectionModal from "./components/FileSelectionModal";
 
 function Home() {
   const {
@@ -14,7 +15,11 @@ function Home() {
     progress,
     debugLogs,
     fileInputRef,
+    showSelectionModal,
+    pendingFiles,
     handleFolderSelect,
+    handleSelectionConfirm,
+    handleSelectionCancel,
   } = useFileProcessor();
 
   const { elapsedTime, formatTime } = useTimer(loading);
@@ -35,6 +40,13 @@ function Home() {
         fileInputRef={fileInputRef}
         loading={loading}
         onFolderSelect={handleFolderSelect}
+      />
+
+      <FileSelectionModal
+        open={showSelectionModal}
+        onClose={handleSelectionCancel}
+        files={pendingFiles}
+        onConfirm={handleSelectionConfirm}
       />
 
       <ProgressSection
