@@ -1,35 +1,45 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useMemo } from "react";
+import {
+  ThemeProvider,
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
+  Box,
+} from "@mui/material";
+import { AccountTree } from "@mui/icons-material";
+import ThemeToggle from "./components/ThemeToggle";
+import Home from "./pages/Home";
+import { darkTheme } from "./theme/darkTheme";
+import { lightTheme } from "./theme/lightTheme";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [darkMode, setDarkMode] = useState(true);
+
+  const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
+
+  const handleThemeToggle = () => {
+    setDarkMode(!darkMode);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static">
+          <Toolbar>
+            <AccountTree sx={{ mr: 2 }} />
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              ASCII File Structure Viewer
+            </Typography>
+            <ThemeToggle darkMode={darkMode} onToggle={handleThemeToggle} />
+          </Toolbar>
+        </AppBar>
+        <Home />
+      </Box>
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

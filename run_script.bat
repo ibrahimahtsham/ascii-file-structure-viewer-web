@@ -34,7 +34,7 @@ if errorlevel 1 (
 echo Successfully deployed to GitHub Pages!
 echo Opening GitHub Pages site in your default browser...
 timeout /t 5 /nobreak
-start https://ibrahimahtsham.github.io/freelancer-client-info-grabber/
+start https://github.com/ibrahimahtsham/ascii-file-structure-viewer-web/actions/
 goto end
 
 :lint
