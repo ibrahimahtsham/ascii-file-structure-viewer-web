@@ -6,7 +6,13 @@ import {
   Box,
   LinearProgress,
 } from "@mui/material";
-import { BarChart, Code, FolderOpen, Description } from "@mui/icons-material";
+import {
+  BarChart,
+  Code,
+  FolderOpen,
+  Description,
+  Timer,
+} from "@mui/icons-material";
 
 function CodeStats({ stats }) {
   if (!stats) {
@@ -26,6 +32,13 @@ function CodeStats({ stats }) {
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const formatTime = (seconds) => {
+    if (seconds < 1) {
+      return `${Math.round(seconds * 1000)}ms`;
+    }
+    return `${seconds.toFixed(2)}s`;
   };
 
   const topFileTypes = Object.entries(stats.fileTypes)
@@ -78,6 +91,18 @@ function CodeStats({ stats }) {
               ` (${stats.largestFile.lines} lines)`}
           </Typography>
         </Grid>
+
+        {stats.processingTime && (
+          <Grid size={{ xs: 12 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Timer sx={{ mr: 1, color: "info.main" }} />
+              <Typography variant="body2">
+                <strong>Processing Time:</strong>{" "}
+                {formatTime(stats.processingTime)}
+              </Typography>
+            </Box>
+          </Grid>
+        )}
       </Grid>
 
       <Box sx={{ mt: 2 }}>
