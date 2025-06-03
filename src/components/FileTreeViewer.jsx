@@ -1,35 +1,31 @@
 import { useState } from "react";
-import { TreeView, TreeItem } from "@mui/lab";
-import {
-  ExpandMore,
-  ChevronRight,
-  Folder,
-  InsertDriveFile,
-} from "@mui/icons-material";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { Folder, InsertDriveFile } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 
 function FileTreeViewer({ treeData }) {
-  const [expanded, setExpanded] = useState([]);
+  const [expandedItems, setExpandedItems] = useState([]);
 
-  const handleToggle = (event, nodeIds) => {
-    setExpanded(nodeIds);
+  const handleExpandedItemsChange = (event, itemIds) => {
+    setExpandedItems(itemIds);
   };
 
-  const renderTree = (nodes, path = "") => {
+  const renderTreeItems = (nodes, path = "") => {
     return Object.entries(nodes).map(([key, value]) => {
-      const nodeId = path ? `${path}/${key}` : key;
+      const itemId = path ? `${path}/${key}` : key;
       const isFile = value && value.name;
 
       return (
         <TreeItem
-          key={nodeId}
-          nodeId={nodeId}
+          key={itemId}
+          itemId={itemId}
           label={
-            <Box sx={{ display: "flex", alignItems: "center", p: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", py: 0.5 }}>
               {isFile ? (
-                <InsertDriveFile sx={{ mr: 1 }} />
+                <InsertDriveFile sx={{ mr: 1, fontSize: 16 }} />
               ) : (
-                <Folder sx={{ mr: 1 }} />
+                <Folder sx={{ mr: 1, fontSize: 16 }} />
               )}
               <Typography variant="body2">
                 {key}
@@ -46,7 +42,7 @@ function FileTreeViewer({ treeData }) {
             </Box>
           }
         >
-          {!isFile && renderTree(value, nodeId)}
+          {!isFile && renderTreeItems(value, itemId)}
         </TreeItem>
       );
     });
@@ -61,14 +57,12 @@ function FileTreeViewer({ treeData }) {
   }
 
   return (
-    <TreeView
-      defaultCollapseIcon={<ExpandMore />}
-      defaultExpandIcon={<ChevronRight />}
-      expanded={expanded}
-      onNodeToggle={handleToggle}
+    <SimpleTreeView
+      expandedItems={expandedItems}
+      onExpandedItemsChange={handleExpandedItemsChange}
     >
-      {renderTree(treeData)}
-    </TreeView>
+      {renderTreeItems(treeData)}
+    </SimpleTreeView>
   );
 }
 

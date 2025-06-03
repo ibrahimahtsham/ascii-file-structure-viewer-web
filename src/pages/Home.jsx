@@ -87,7 +87,7 @@ function Home() {
 
       {fileData && (
         <Grid container spacing={3}>
-          <Grid item xs={12} lg={6}>
+          <Grid size={{ xs: 12, lg: 6 }}>
             <Paper sx={{ p: 2, height: "600px", overflow: "auto" }}>
               <Typography variant="h6" gutterBottom>
                 File Structure
@@ -96,12 +96,12 @@ function Home() {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} lg={6}>
+          <Grid size={{ xs: 12, lg: 6 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <CodeStats stats={fileData.stats} />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <AsciiTree asciiTree={fileData.asciiTree} />
               </Grid>
             </Grid>

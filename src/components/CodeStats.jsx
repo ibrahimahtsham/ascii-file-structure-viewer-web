@@ -44,7 +44,7 @@ function CodeStats({ stats }) {
       </Typography>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <Description sx={{ mr: 1, color: "primary.main" }} />
             <Typography variant="body2">
@@ -53,7 +53,7 @@ function CodeStats({ stats }) {
           </Box>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <Code sx={{ mr: 1, color: "secondary.main" }} />
             <Typography variant="body2">
@@ -62,7 +62,7 @@ function CodeStats({ stats }) {
           </Box>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <FolderOpen sx={{ mr: 1, color: "success.main" }} />
             <Typography variant="body2">
@@ -71,7 +71,7 @@ function CodeStats({ stats }) {
           </Box>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Typography variant="body2">
             <strong>Largest File:</strong> {stats.largestFile.name}
             {stats.largestFile.lines > 0 &&
