@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import {
@@ -7,6 +7,10 @@ import {
   VisibilityOff,
   Visibility,
   FolderOff,
+  ExpandMore,
+  ExpandLess,
+  UnfoldMore,
+  UnfoldLess,
 } from "@mui/icons-material";
 import {
   Box,
@@ -16,14 +20,46 @@ import {
   Chip,
   Stack,
   Button,
+  Divider,
 } from "@mui/material";
 
 function FileTreeViewer({ treeData, onIgnoreChange }) {
   const [expandedItems, setExpandedItems] = useState([]);
   const [ignoredItems, setIgnoredItems] = useState(new Set());
 
+  // Get all folder paths for expand/collapse all functionality
+  const allFolderPaths = useMemo(() => {
+    const folders = [];
+
+    const collectFolders = (nodes, path = "") => {
+      Object.entries(nodes).forEach(([key, value]) => {
+        const itemId = path ? `${path}/${key}` : key;
+        const isFile = value && value.name;
+
+        if (!isFile) {
+          folders.push(itemId);
+          collectFolders(value, itemId);
+        }
+      });
+    };
+
+    if (treeData) {
+      collectFolders(treeData);
+    }
+
+    return folders;
+  }, [treeData]);
+
   const handleExpandedItemsChange = (event, itemIds) => {
     setExpandedItems(itemIds);
+  };
+
+  const handleExpandAll = () => {
+    setExpandedItems(allFolderPaths);
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedItems([]);
   };
 
   const handleIgnoreToggle = useCallback(
@@ -216,8 +252,70 @@ function FileTreeViewer({ treeData, onIgnoreChange }) {
     );
   }
 
+  const isAllExpanded = expandedItems.length === allFolderPaths.length;
+  const isAllCollapsed = expandedItems.length === 0;
+
   return (
     <Box>
+      {/* Tree Controls */}
+      <Box sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+            File Structure ({allFolderPaths.length} folders)
+          </Typography>
+
+          <Tooltip title="Expand All Folders">
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleExpandAll}
+              disabled={isAllExpanded}
+              startIcon={<UnfoldMore />}
+              sx={{ minWidth: "auto", px: 1 }}
+            >
+              Expand
+            </Button>
+          </Tooltip>
+
+          <Tooltip title="Collapse All Folders">
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleCollapseAll}
+              disabled={isAllCollapsed}
+              startIcon={<UnfoldLess />}
+              sx={{ minWidth: "auto", px: 1 }}
+            >
+              Collapse
+            </Button>
+          </Tooltip>
+        </Stack>
+
+        {/* Expansion Status Indicator */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+          <Chip
+            label={`${expandedItems.length}/${allFolderPaths.length} expanded`}
+            size="small"
+            variant="outlined"
+            color={
+              isAllExpanded ? "success" : isAllCollapsed ? "default" : "primary"
+            }
+            icon={
+              isAllExpanded ? (
+                <ExpandMore />
+              ) : isAllCollapsed ? (
+                <ExpandLess />
+              ) : (
+                <UnfoldMore />
+              )
+            }
+          />
+        </Box>
+
+        <Divider />
+      </Box>
+
+      {/* Ignored Items Section */}
       {ignoredItems.size > 0 && (
         <Box sx={{ mb: 2 }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
@@ -255,9 +353,11 @@ function FileTreeViewer({ treeData, onIgnoreChange }) {
               />
             )}
           </Box>
+          <Divider sx={{ mt: 2 }} />
         </Box>
       )}
 
+      {/* Tree View */}
       <SimpleTreeView
         expandedItems={expandedItems}
         onExpandedItemsChange={handleExpandedItemsChange}
