@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -33,6 +33,23 @@ import {
   FilterList,
 } from "@mui/icons-material";
 
+// Debounce hook for search input
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 function FileSelectionModal({
   open,
   onClose,
@@ -54,12 +71,17 @@ function FileSelectionModal({
   ],
 }) {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // Immediate input state
   const [ignorePatterns, setIgnorePatterns] = useState(defaultIgnorePatterns);
   const [newPattern, setNewPattern] = useState("");
 
-  // Build file tree structure for display
+  // Debounce search input to reduce computation frequency
+  const debouncedSearchTerm = useDebounce(searchInput, 300);
+
+  // Memoize file tree construction (only when files change)
   const fileTree = useMemo(() => {
+    if (!files || files.length === 0) return {};
+
     const tree = {};
     files.forEach((file) => {
       const parts = file.webkitRelativePath.split("/");
@@ -90,146 +112,171 @@ function FileSelectionModal({
     return tree;
   }, [files]);
 
-  // Filter files based on search and ignore patterns
+  // Memoize file filtering with debounced search
   const filteredFiles = useMemo(() => {
+    if (!files || files.length === 0) return [];
+
     return files.filter((file) => {
       const path = file.webkitRelativePath.toLowerCase();
-      const matchesSearch = path.includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        !debouncedSearchTerm ||
+        path.includes(debouncedSearchTerm.toLowerCase());
       const matchesIgnorePattern = ignorePatterns.some((pattern) =>
         path.includes(pattern.toLowerCase())
       );
       return matchesSearch && !matchesIgnorePattern;
     });
-  }, [files, searchTerm, ignorePatterns]);
+  }, [files, debouncedSearchTerm, ignorePatterns]);
 
-  // Initialize selected files (all filtered files selected by default)
-  useState(() => {
+  // Initialize selected files when filteredFiles changes
+  useEffect(() => {
+    if (filteredFiles.length > 0) {
+      setSelectedFiles(new Set(filteredFiles.map((f) => f.webkitRelativePath)));
+    }
+  }, [filteredFiles]);
+
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleFileToggle = useCallback((filePath) => {
+    setSelectedFiles((prev) => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(filePath)) {
+        newSelected.delete(filePath);
+      } else {
+        newSelected.add(filePath);
+      }
+      return newSelected;
+    });
+  }, []);
+
+  const handleFolderToggle = useCallback(
+    (folderPath, shouldSelect) => {
+      setSelectedFiles((prev) => {
+        const newSelected = new Set(prev);
+        filteredFiles.forEach((file) => {
+          if (file.webkitRelativePath.startsWith(folderPath + "/")) {
+            if (shouldSelect) {
+              newSelected.add(file.webkitRelativePath);
+            } else {
+              newSelected.delete(file.webkitRelativePath);
+            }
+          }
+        });
+        return newSelected;
+      });
+    },
+    [filteredFiles]
+  );
+
+  const handleSelectAll = useCallback(() => {
     setSelectedFiles(new Set(filteredFiles.map((f) => f.webkitRelativePath)));
   }, [filteredFiles]);
 
-  const handleFileToggle = (filePath) => {
-    const newSelected = new Set(selectedFiles);
-    if (newSelected.has(filePath)) {
-      newSelected.delete(filePath);
-    } else {
-      newSelected.add(filePath);
-    }
-    setSelectedFiles(newSelected);
-  };
-
-  const handleFolderToggle = (folderPath, shouldSelect) => {
-    const newSelected = new Set(selectedFiles);
-    filteredFiles.forEach((file) => {
-      if (file.webkitRelativePath.startsWith(folderPath + "/")) {
-        if (shouldSelect) {
-          newSelected.add(file.webkitRelativePath);
-        } else {
-          newSelected.delete(file.webkitRelativePath);
-        }
-      }
-    });
-    setSelectedFiles(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    setSelectedFiles(new Set(filteredFiles.map((f) => f.webkitRelativePath)));
-  };
-
-  const handleDeselectAll = () => {
+  const handleDeselectAll = useCallback(() => {
     setSelectedFiles(new Set());
-  };
+  }, []);
 
-  const handleAddPattern = () => {
+  const handleAddPattern = useCallback(() => {
     if (newPattern.trim() && !ignorePatterns.includes(newPattern.trim())) {
-      setIgnorePatterns([...ignorePatterns, newPattern.trim()]);
+      setIgnorePatterns((prev) => [...prev, newPattern.trim()]);
       setNewPattern("");
     }
-  };
+  }, [newPattern, ignorePatterns]);
 
-  const handleRemovePattern = (pattern) => {
-    setIgnorePatterns(ignorePatterns.filter((p) => p !== pattern));
-  };
+  const handleRemovePattern = useCallback((pattern) => {
+    setIgnorePatterns((prev) => prev.filter((p) => p !== pattern));
+  }, []);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     const selectedFilesList = files.filter((file) =>
       selectedFiles.has(file.webkitRelativePath)
     );
     onConfirm(selectedFilesList, ignorePatterns);
-  };
+  }, [files, selectedFiles, ignorePatterns, onConfirm]);
 
-  const renderTreeItem = (key, item, level = 0) => {
-    if (item.type === "file") {
-      const isSelected = selectedFiles.has(item.path);
-      const isFiltered = filteredFiles.some(
-        (f) => f.webkitRelativePath === item.path
-      );
+  // Memoize tree rendering to prevent unnecessary re-renders
+  const renderTreeItem = useCallback(
+    (key, item, level = 0) => {
+      if (item.type === "file") {
+        const isSelected = selectedFiles.has(item.path);
+        const isFiltered = filteredFiles.some(
+          (f) => f.webkitRelativePath === item.path
+        );
 
-      if (!isFiltered) return null;
+        if (!isFiltered) return null;
 
-      return (
-        <ListItem key={item.path} sx={{ pl: level * 2 + 1 }}>
-          <ListItemButton onClick={() => handleFileToggle(item.path)}>
-            <ListItemIcon>
-              <Checkbox checked={isSelected} size="small" />
-            </ListItemIcon>
-            <ListItemIcon>
-              <InsertDriveFile sx={{ fontSize: 16 }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={key}
-              secondary={`${(item.size / 1024).toFixed(1)} KB`}
-              primaryTypographyProps={{ variant: "body2" }}
-              secondaryTypographyProps={{ variant: "caption" }}
-            />
-          </ListItemButton>
-        </ListItem>
-      );
-    } else {
-      // Folder
-      const folderFiles = filteredFiles.filter((f) =>
-        f.webkitRelativePath.startsWith(item.path + "/")
-      );
-      const selectedInFolder = folderFiles.filter((f) =>
-        selectedFiles.has(f.webkitRelativePath)
-      ).length;
-      const isAllSelected =
-        folderFiles.length > 0 && selectedInFolder === folderFiles.length;
-      const isPartiallySelected =
-        selectedInFolder > 0 && selectedInFolder < folderFiles.length;
-
-      if (folderFiles.length === 0) return null;
-
-      return (
-        <Box key={item.path}>
-          <ListItem sx={{ pl: level * 2 }}>
-            <ListItemButton
-              onClick={() => handleFolderToggle(item.path, !isAllSelected)}
-            >
+        return (
+          <ListItem key={item.path} sx={{ pl: level * 2 + 1 }}>
+            <ListItemButton onClick={() => handleFileToggle(item.path)}>
               <ListItemIcon>
-                <Checkbox
-                  checked={isAllSelected}
-                  indeterminate={isPartiallySelected}
-                  size="small"
-                />
+                <Checkbox checked={isSelected} size="small" />
               </ListItemIcon>
               <ListItemIcon>
-                <Folder sx={{ fontSize: 16 }} />
+                <InsertDriveFile sx={{ fontSize: 16 }} />
               </ListItemIcon>
               <ListItemText
                 primary={key}
-                secondary={`${folderFiles.length} files`}
-                primaryTypographyProps={{ variant: "body2", fontWeight: 500 }}
+                secondary={`${(item.size / 1024).toFixed(1)} KB`}
+                primaryTypographyProps={{ variant: "body2" }}
                 secondaryTypographyProps={{ variant: "caption" }}
               />
             </ListItemButton>
           </ListItem>
-          {Object.entries(item.children || {}).map(([childKey, childItem]) =>
-            renderTreeItem(childKey, childItem, level + 1)
-          )}
-        </Box>
-      );
-    }
-  };
+        );
+      } else {
+        // Folder
+        const folderFiles = filteredFiles.filter((f) =>
+          f.webkitRelativePath.startsWith(item.path + "/")
+        );
+        const selectedInFolder = folderFiles.filter((f) =>
+          selectedFiles.has(f.webkitRelativePath)
+        ).length;
+        const isAllSelected =
+          folderFiles.length > 0 && selectedInFolder === folderFiles.length;
+        const isPartiallySelected =
+          selectedInFolder > 0 && selectedInFolder < folderFiles.length;
+
+        if (folderFiles.length === 0) return null;
+
+        return (
+          <Box key={item.path}>
+            <ListItem sx={{ pl: level * 2 }}>
+              <ListItemButton
+                onClick={() => handleFolderToggle(item.path, !isAllSelected)}
+              >
+                <ListItemIcon>
+                  <Checkbox
+                    checked={isAllSelected}
+                    indeterminate={isPartiallySelected}
+                    size="small"
+                  />
+                </ListItemIcon>
+                <ListItemIcon>
+                  <Folder sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={key}
+                  secondary={`${folderFiles.length} files`}
+                  primaryTypographyProps={{ variant: "body2", fontWeight: 500 }}
+                  secondaryTypographyProps={{ variant: "caption" }}
+                />
+              </ListItemButton>
+            </ListItem>
+            {Object.entries(item.children || {}).map(([childKey, childItem]) =>
+              renderTreeItem(childKey, childItem, level + 1)
+            )}
+          </Box>
+        );
+      }
+    },
+    [selectedFiles, filteredFiles, handleFileToggle, handleFolderToggle]
+  );
+
+  // Memoize the rendered tree items
+  const treeItems = useMemo(() => {
+    return Object.entries(fileTree).map(([key, item]) =>
+      renderTreeItem(key, item)
+    );
+  }, [fileTree, renderTreeItem]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -269,8 +316,8 @@ function FileSelectionModal({
             fullWidth
             size="small"
             placeholder="Search files and folders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -332,7 +379,10 @@ function FileSelectionModal({
           <Typography variant="body2">
             <strong>Selected:</strong> {selectedFiles.size} of{" "}
             {filteredFiles.length} files (
-            {((selectedFiles.size / filteredFiles.length) * 100).toFixed(1)}%)
+            {filteredFiles.length > 0
+              ? ((selectedFiles.size / filteredFiles.length) * 100).toFixed(1)
+              : 0}
+            %)
           </Typography>
         </Box>
 
@@ -345,11 +395,7 @@ function FileSelectionModal({
             borderColor: "divider",
           }}
         >
-          <List dense>
-            {Object.entries(fileTree).map(([key, item]) =>
-              renderTreeItem(key, item)
-            )}
-          </List>
+          <List dense>{treeItems}</List>
         </Box>
       </DialogContent>
 
