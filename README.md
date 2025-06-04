@@ -26,27 +26,27 @@ A modern web application built with React and Vite that visualizes project file 
 
 ### Main Interface
 
-![Main Interface](screenshots/main-interface.png)
+![image](https://github.com/user-attachments/assets/8c3257f7-6fba-4489-b314-37a047be2dd6)
 _Upload local folders or analyze GitHub repositories with an intuitive interface_
 
 ### File Tree Viewer
 
-![File Tree Viewer](screenshots/file-tree-viewer.png)
+![image](https://github.com/user-attachments/assets/1946ec92-7c6c-4a98-9118-db6b56988425)
 _Interactive file tree with ignore/include controls and detailed file information_
 
 ### ASCII Tree Output
 
-![ASCII Tree Output](screenshots/ascii-tree-output.png)
+![image](https://github.com/user-attachments/assets/364b392f-cd3c-43b9-a48e-d1dba23befc7)
 _Beautiful ASCII art representation with customizable display options_
 
 ### Code Statistics
 
-![Code Statistics](screenshots/code-statistics.png)
+![image](https://github.com/user-attachments/assets/dadee87e-9433-4197-838d-69b901411d7b)
 _Comprehensive code analysis with file type distribution and metrics_
 
 ### GitHub Repository Analysis
 
-![GitHub Repository Analysis](screenshots/github-analysis.png)
+![image](https://github.com/user-attachments/assets/c02962b4-ad50-4db7-b6f2-68748249ddea)
 _Direct GitHub repository analysis with rate limit monitoring_
 
 ## 🚀 Live Demo
