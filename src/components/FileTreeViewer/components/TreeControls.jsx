@@ -21,30 +21,46 @@ function TreeControls({
           File Structure ({allFolderPathsCount} folders)
         </Typography>
 
-        <Tooltip title="Expand All Folders">
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={onExpandAll}
-            disabled={isAllExpanded}
-            startIcon={<UnfoldMore />}
-            sx={{ minWidth: "auto", px: 1 }}
-          >
-            Expand
-          </Button>
+        <Tooltip
+          title={
+            isAllExpanded
+              ? "All folders are already expanded"
+              : "Expand All Folders"
+          }
+        >
+          <span>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onExpandAll}
+              disabled={isAllExpanded}
+              startIcon={<UnfoldMore />}
+              sx={{ minWidth: "auto", px: 1 }}
+            >
+              Expand
+            </Button>
+          </span>
         </Tooltip>
 
-        <Tooltip title="Collapse All Folders">
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={onCollapseAll}
-            disabled={isAllCollapsed}
-            startIcon={<UnfoldLess />}
-            sx={{ minWidth: "auto", px: 1 }}
-          >
-            Collapse
-          </Button>
+        <Tooltip
+          title={
+            isAllCollapsed
+              ? "All folders are already collapsed"
+              : "Collapse All Folders"
+          }
+        >
+          <span>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onCollapseAll}
+              disabled={isAllCollapsed}
+              startIcon={<UnfoldLess />}
+              sx={{ minWidth: "auto", px: 1 }}
+            >
+              Collapse
+            </Button>
+          </span>
         </Tooltip>
       </Stack>
 
