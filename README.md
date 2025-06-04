@@ -21,6 +21,33 @@ A modern web application built with React and Vite that visualizes project file 
 - **⚡ Real-time Progress**: Live progress tracking during file processing
 - **🔍 Smart File Filtering**: Automatically handles binary files and large files
 
+## 📸 Screenshots
+
+### Main Interface
+
+![Main Interface](screenshots/main-interface.png)
+_Upload local folders or analyze GitHub repositories with an intuitive interface_
+
+### File Tree Viewer
+
+![File Tree Viewer](screenshots/file-tree-viewer.png)
+_Interactive file tree with ignore/include controls and detailed file information_
+
+### ASCII Tree Output
+
+![ASCII Tree Output](screenshots/ascii-tree-output.png)
+_Beautiful ASCII art representation with customizable display options_
+
+### Code Statistics
+
+![Code Statistics](screenshots/code-statistics.png)
+_Comprehensive code analysis with file type distribution and metrics_
+
+### GitHub Repository Analysis
+
+![GitHub Repository Analysis](screenshots/github-analysis.png)
+_Direct GitHub repository analysis with rate limit monitoring_
+
 ## 🚀 Live Demo
 
 Visit the live application: [ASCII File Structure Viewer](https://your-deployed-url.com)
@@ -164,15 +191,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📋 Roadmap
-
-- [ ] Private repository support with authentication
-- [ ] Export options (PDF, PNG, SVG)
-- [ ] Custom styling options for ASCII trees
-- [ ] Comparison mode for multiple repositories
-- [ ] Integration with popular code hosting platforms
-- [ ] API for programmatic access
-
 ## 🐛 Known Issues
 
 - Large repositories may take some time to process
@@ -181,7 +199,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgments
 
@@ -189,3 +207,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - UI components from [Material-UI](https://mui.com/)
 - GitHub API for repository access
 - Icons from [Material Icons](https://fonts.google.com/icons)
+
+## 📞 Support
+
+If you have any questions or need help, please:
+
+- Open an issue on GitHub
+- Contact the maintainers
