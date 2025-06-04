@@ -32,7 +32,7 @@ if errorlevel 1 (
     goto end
 )
 echo Successfully deployed to GitHub Pages!
-echo Opening GitHub Pages site in your default browser...
+echo Opening GitHub Actions in your default browser...
 timeout /t 5 /nobreak
 start https://github.com/ibrahimahtsham/ascii-file-structure-viewer-web/actions/
 goto end

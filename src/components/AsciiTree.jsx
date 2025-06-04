@@ -24,13 +24,27 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + sizes[i];
   };
 
+  const getFileColorClass = (lines) => {
+    if (lines === 0) return "file-empty";
+    if (lines >= 1 && lines <= 200) return "file-small";
+    if (lines >= 201 && lines <= 300) return "file-medium";
+    if (lines >= 301 && lines <= 500) return "file-large";
+    if (lines > 500) return "file-huge";
+    return "file-small"; // fallback
+  };
+
   const generateEnhancedAsciiTree = useMemo(() => {
-    if (!treeData) return asciiTree;
+    if (!treeData) {
+      return asciiTree;
+    }
 
     const isIgnored = (path) => {
-      if (ignoredItems.includes(path)) return true;
-      return ignoredItems.some(
-        (ignored) => path.startsWith(ignored + "/") && !ignored.includes(".")
+      return (
+        ignoredItems.includes(path) ||
+        ignoredItems.some(
+          (ignoredPath) =>
+            path.startsWith(ignoredPath + "/") && !ignoredPath.includes(".")
+        )
       );
     };
 
@@ -57,16 +71,22 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
           displayText += ` [${formatBytes(value.size)}]`;
         }
 
-        if (showColors) {
-          const icon = isFile ? "📄" : "📁";
-          result += `${prefix}${connector}${icon} ${displayText}\n`;
+        let lineOutput;
+        if (showColors && isFile) {
+          const colorClass = getFileColorClass(value.lines);
+          lineOutput = `${prefix}${connector}<span class="${colorClass}">📄 ${displayText}</span>\n`;
+        } else if (showColors && !isFile) {
+          lineOutput = `${prefix}${connector}<span class="folder">📁 ${displayText}</span>\n`;
         } else {
-          result += `${prefix}${connector}${displayText}\n`;
+          const icon = isFile ? "📄" : "📁";
+          lineOutput = `${prefix}${connector}${icon} ${displayText}\n`;
         }
+
+        result += lineOutput;
 
         if (!isFile && typeof value === "object") {
           const nextPrefix = prefix + (isLastEntry ? "    " : "│   ");
-          result += renderNode(value, nextPrefix, isLastEntry, itemPath);
+          result += renderNode(value, nextPrefix, itemPath);
         }
       });
 
@@ -237,7 +257,15 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
                 variant="outlined"
               />
             </Tooltip>
-            <Tooltip title="Small files (≤100 lines)">
+            <Tooltip title="Empty files (0 lines)">
+              <Chip
+                label="📄 Empty"
+                size="small"
+                sx={{ color: "#9E9E9E", borderColor: "#9E9E9E" }}
+                variant="outlined"
+              />
+            </Tooltip>
+            <Tooltip title="Small files (1-200 lines)">
               <Chip
                 label="📄 Small"
                 size="small"
@@ -245,7 +273,7 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
                 variant="outlined"
               />
             </Tooltip>
-            <Tooltip title="Medium files (101-500 lines)">
+            <Tooltip title="Medium files (201-300 lines)">
               <Chip
                 label="📄 Medium"
                 size="small"
@@ -253,7 +281,7 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
                 variant="outlined"
               />
             </Tooltip>
-            <Tooltip title="Large files (501-1000 lines)">
+            <Tooltip title="Large files (301-500 lines)">
               <Chip
                 label="📄 Large"
                 size="small"
@@ -261,7 +289,7 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
                 variant="outlined"
               />
             </Tooltip>
-            <Tooltip title="Very large files (>1000 lines)">
+            <Tooltip title="Huge files (500+ lines)">
               <Chip
                 label="📄 Huge"
                 size="small"
@@ -275,7 +303,6 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
 
       {/* ASCII Tree Display */}
       <Box
-        component="pre"
         sx={{
           fontFamily: "monospace",
           fontSize: "0.75rem",
@@ -292,6 +319,9 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
           "& .folder": {
             color: showColors ? "#FFA726" : "inherit",
           },
+          "& .file-empty": {
+            color: showColors ? "#9E9E9E" : "inherit",
+          },
           "& .file-small": {
             color: showColors ? "#4CAF50" : "inherit",
           },
@@ -305,9 +335,10 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
             color: showColors ? "#F44336" : "inherit",
           },
         }}
-      >
-        {generateEnhancedAsciiTree || asciiTree}
-      </Box>
+        dangerouslySetInnerHTML={{
+          __html: generateEnhancedAsciiTree || asciiTree,
+        }}
+      />
     </Paper>
   );
 }

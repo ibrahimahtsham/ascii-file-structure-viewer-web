@@ -1,9 +1,16 @@
 import { Grid, Paper, Typography } from "@mui/material";
+import { useState } from "react";
 import FileTreeViewer from "../../../components/FileTreeViewer";
 import CodeStats from "../../../components/CodeStats";
 import AsciiTree from "../../../components/AsciiTree";
 
 function ResultsSection({ fileData }) {
+  const [ignoredItems, setIgnoredItems] = useState([]);
+
+  const handleIgnoreChange = (newIgnoredItems) => {
+    setIgnoredItems(newIgnoredItems);
+  };
+
   if (!fileData) {
     return null;
   }
@@ -15,7 +22,10 @@ function ResultsSection({ fileData }) {
           <Typography variant="h6" gutterBottom>
             File Structure
           </Typography>
-          <FileTreeViewer treeData={fileData.structure} />
+          <FileTreeViewer
+            treeData={fileData.structure}
+            onIgnoreChange={handleIgnoreChange}
+          />
         </Paper>
       </Grid>
 
@@ -25,7 +35,11 @@ function ResultsSection({ fileData }) {
             <CodeStats stats={fileData.stats} />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <AsciiTree asciiTree={fileData.asciiTree} />
+            <AsciiTree
+              asciiTree={fileData.asciiTree}
+              treeData={fileData.structure}
+              ignoredItems={ignoredItems}
+            />
           </Grid>
         </Grid>
       </Grid>
