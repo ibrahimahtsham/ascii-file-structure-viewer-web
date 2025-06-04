@@ -17,31 +17,51 @@ export function parseRepositoryURL(url) {
   return null;
 }
 
-export function handleAPIError(response) {
+export function handleAPIError(response, rateLimitDetails = null) {
   if (response.status === 404) {
-    return new Error("Repository not found or is private");
+    return new Error(
+      "Repository not found or is private. Please check the repository URL and ensure it's publicly accessible."
+    );
   }
 
   if (response.status === 403) {
     // Check if it's a rate limit issue
     const rateLimitRemaining = response.headers.get("x-ratelimit-remaining");
+    const rateLimitReset = response.headers.get("x-ratelimit-reset");
+
     if (rateLimitRemaining === "0") {
-      const resetTime = new Date(
-        parseInt(response.headers.get("x-ratelimit-reset")) * 1000
-      );
+      const resetTime = new Date(parseInt(rateLimitReset) * 1000);
       const waitMinutes = Math.ceil(
         (resetTime.getTime() - Date.now()) / (1000 * 60)
       );
+
       return new Error(
-        `GitHub rate limit exceeded. Please try again in ${waitMinutes} minutes.`
+        `GitHub API rate limit exceeded (0 requests remaining). Your rate limit will reset at ${resetTime.toLocaleTimeString()}. Please try again in ${waitMinutes} minutes.`
       );
     }
+
+    if (rateLimitDetails && !rateLimitDetails.canProceed) {
+      return new Error(
+        `GitHub API rate limit too low (${rateLimitDetails.remaining} requests remaining). ${rateLimitDetails.message}`
+      );
+    }
+
     return new Error(
-      "Rate limit exceeded or access forbidden. Please try again later."
+      "Access forbidden. This might be due to rate limiting or repository permissions."
     );
   }
 
-  return new Error(`GitHub API error: ${response.status}`);
+  if (response.status >= 500) {
+    return new Error(
+      `GitHub server error (${response.status}). Please try again later.`
+    );
+  }
+
+  return new Error(
+    `GitHub API error (${response.status}): ${
+      response.statusText || "Unknown error"
+    }`
+  );
 }
 
 export function validateRepositoryInput(input) {
@@ -56,7 +76,9 @@ export function validateRepositoryInput(input) {
 
   const parsed = parseRepositoryURL(trimmed);
   if (!parsed) {
-    throw new Error("Invalid GitHub repository URL format");
+    throw new Error(
+      "Invalid GitHub repository URL format. Use formats like 'owner/repo' or 'https://github.com/owner/repo'"
+    );
   }
 
   return parsed;

@@ -13,7 +13,10 @@ export class RepositoryFetcher {
       const response = await this.rateLimitManager.rateLimitedFetch(url);
 
       if (!response.ok) {
-        throw handleAPIError(response);
+        throw handleAPIError(
+          response,
+          this.rateLimitManager.getRateLimitDetails()
+        );
       }
 
       return await response.json();
@@ -49,16 +52,20 @@ export class RepositoryFetcher {
       throw new Error("Invalid repository format");
     }
 
-    // Check initial rate limit
+    // Check initial rate limit with detailed feedback
     await this.rateLimitManager.checkRateLimit(this.baseURL);
+    const rateLimitDetails = this.rateLimitManager.getRateLimitDetails();
 
-    if (this.rateLimitManager.isApproachingLimit(50)) {
+    if (!rateLimitDetails.canProceed) {
       if (onRateLimit) {
-        onRateLimit(this.rateLimitManager.rateLimitInfo);
+        onRateLimit(rateLimitDetails);
       }
-      throw new Error(
-        `Rate limit too low (${this.rateLimitManager.rateLimitInfo.remaining} requests remaining). Please try again later.`
-      );
+      throw this.rateLimitManager.createRateLimitError();
+    }
+
+    // Warn if rate limit is low
+    if (rateLimitDetails.status === "warning" && onRateLimit) {
+      onRateLimit(rateLimitDetails);
     }
 
     const allFiles = [];
@@ -71,15 +78,20 @@ export class RepositoryFetcher {
         return;
       }
 
-      // Check rate limit every 10 requests
-      if (requestCount % 10 === 0 && requestCount > 0) {
-        if (this.rateLimitManager.isApproachingLimit(10)) {
+      // Check rate limit every 5 requests instead of 10 for better monitoring
+      if (requestCount % 5 === 0 && requestCount > 0) {
+        const currentRateLimit = this.rateLimitManager.getRateLimitDetails();
+
+        if (!currentRateLimit.canProceed) {
           if (onRateLimit) {
-            onRateLimit(this.rateLimitManager.rateLimitInfo);
+            onRateLimit(currentRateLimit);
           }
-          throw new Error(
-            `Approaching rate limit (${this.rateLimitManager.rateLimitInfo.remaining} requests remaining). Stopping to avoid exceeding limit.`
-          );
+          throw this.rateLimitManager.createRateLimitError();
+        }
+
+        // Update progress with rate limit info
+        if (onProgress) {
+          onProgress(allFiles.length, currentRateLimit);
         }
       }
 
@@ -101,7 +113,10 @@ export class RepositoryFetcher {
             allFiles.push(item);
 
             if (onProgress) {
-              onProgress(allFiles.length, this.rateLimitManager.rateLimitInfo);
+              onProgress(
+                allFiles.length,
+                this.rateLimitManager.getRateLimitDetails()
+              );
             }
           } else if (item.type === "dir") {
             await fetchRecursively(item.path, level + 1);

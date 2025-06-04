@@ -21,7 +21,7 @@ export const useFileProcessor = () => {
   const [debugLogs, setDebugLogs] = useState([]);
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
-  const [githubLoading, setGithubLoading] = useState(false); // Separate state for GitHub loading
+  const [githubLoading, setGithubLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   const addDebugLog = useCallback((message) => {
@@ -33,7 +33,6 @@ export const useFileProcessor = () => {
     async (files, customIgnorePatterns = []) => {
       if (files.length === 0) return;
 
-      // Clear previous data immediately
       setFileData(null);
       setLoading(true);
       setError(null);
@@ -45,7 +44,6 @@ export const useFileProcessor = () => {
         phaseTimings: { filtering: 0, processing: 0, building: 0, ascii: 0 },
       });
 
-      // Add first debug log immediately and force UI update
       addDebugLog(`🎯 Processing ${files.length} files`);
       if (customIgnorePatterns.length > 0) {
         addDebugLog(
@@ -53,13 +51,11 @@ export const useFileProcessor = () => {
         );
       }
 
-      // Force React to update the UI immediately
       await new Promise((resolve) => setTimeout(resolve, UI_UPDATE_DELAY));
 
       try {
         const fileProcessor = new FileProcessor();
 
-        // Set custom ignore patterns if provided
         if (customIgnorePatterns.length > 0) {
           fileProcessor.setCustomIgnorePatterns(customIgnorePatterns);
         }
@@ -88,7 +84,6 @@ export const useFileProcessor = () => {
         setLoading(false);
         setProgress((prev) => ({ ...prev, percent: 0, current: 0, total: 0 }));
 
-        // Clear file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -101,7 +96,6 @@ export const useFileProcessor = () => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
 
-    // Show selection modal instead of processing immediately
     setPendingFiles(files);
     setShowSelectionModal(true);
   }, []);
@@ -109,15 +103,28 @@ export const useFileProcessor = () => {
   const handleRepositorySelect = useCallback(
     async (repoUrl) => {
       setError(null);
-      setGithubLoading(true); // Use separate GitHub loading state
+      setGithubLoading(true);
       setDebugLogs([]);
 
       addDebugLog(`🔗 Fetching repository: ${repoUrl}`);
 
       try {
         const githubAPI = new GitHubAPI();
-        const { owner, repo } = githubAPI.parseRepositoryURL(repoUrl);
 
+        // Check rate limit first and log the info
+        const rateLimitInfo = await githubAPI.checkRateLimit();
+        if (rateLimitInfo) {
+          const details = githubAPI.rateLimitManager.getRateLimitDetails();
+          addDebugLog(
+            `⏱️ GitHub API Status: ${details.remaining}/${details.limit} requests remaining`
+          );
+
+          if (!details.canProceed) {
+            throw githubAPI.rateLimitManager.createRateLimitError();
+          }
+        }
+
+        const { owner, repo } = githubAPI.parseRepositoryURL(repoUrl);
         addDebugLog(`📂 Analyzing ${owner}/${repo}...`);
 
         const files = await githubAPI.fetchAllFiles(
@@ -127,14 +134,12 @@ export const useFileProcessor = () => {
             addDebugLog(`📄 Fetched ${count} files...`);
             if (rateLimitInfo && rateLimitInfo.remaining !== null) {
               addDebugLog(
-                `⏱️ Rate limit: ${rateLimitInfo.remaining} requests remaining`
+                `⏱️ Rate limit: ${rateLimitInfo.remaining}/${rateLimitInfo.limit} requests remaining`
               );
             }
           },
           (rateLimitInfo) => {
-            addDebugLog(
-              `⚠️ Rate limit warning: ${rateLimitInfo.remaining} requests remaining`
-            );
+            addDebugLog(`⚠️ Rate limit warning: ${rateLimitInfo.message}`);
           }
         );
 
@@ -142,16 +147,39 @@ export const useFileProcessor = () => {
           `✅ Successfully fetched ${files.length} files from GitHub`
         );
 
-        // Show selection modal for GitHub files too
+        // Final rate limit check
+        const finalRateLimit = githubAPI.rateLimitManager.getRateLimitDetails();
+        addDebugLog(
+          `⏱️ Final API Status: ${finalRateLimit.remaining}/${finalRateLimit.limit} requests remaining`
+        );
+
         setPendingFiles(files);
         setShowSelectionModal(true);
       } catch (err) {
-        const errorMessage = "Error fetching repository: " + err.message;
+        let errorMessage = "Error fetching repository: " + err.message;
+
+        // Enhanced error context
+        if (err.message.includes("rate limit")) {
+          addDebugLog(`❌ Rate limit error occurred`);
+          // Add helpful tip about waiting
+          if (err.message.includes("Try again in")) {
+            addDebugLog(
+              `💡 Tip: GitHub API has hourly rate limits. Consider waiting or using a personal access token for higher limits.`
+            );
+          }
+        } else if (err.message.includes("not found")) {
+          addDebugLog(
+            `❌ Repository access error - check if repository exists and is public`
+          );
+        } else if (err.message.includes("Network error")) {
+          addDebugLog(`❌ Network connectivity issue`);
+        }
+
         setError(errorMessage);
         addDebugLog(`❌ ${errorMessage}`);
         console.error("GitHub fetch error:", err);
       } finally {
-        setGithubLoading(false); // Reset GitHub loading state
+        setGithubLoading(false);
       }
     },
     [addDebugLog]
@@ -169,9 +197,8 @@ export const useFileProcessor = () => {
   const handleSelectionCancel = useCallback(() => {
     setShowSelectionModal(false);
     setPendingFiles([]);
-    setGithubLoading(false); // Reset GitHub loading state on cancel
+    setGithubLoading(false);
 
-    // Clear file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -179,8 +206,8 @@ export const useFileProcessor = () => {
 
   return {
     fileData,
-    loading: loading || githubLoading, // Combine both loading states
-    githubLoading, // Expose separate GitHub loading state
+    loading: loading || githubLoading,
+    githubLoading,
     error,
     progress,
     debugLogs,
