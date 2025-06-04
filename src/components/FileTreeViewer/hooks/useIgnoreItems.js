@@ -1,34 +1,29 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export function useIgnoreItems(onIgnoreChange) {
   const [ignoredItems, setIgnoredItems] = useState(new Set());
 
-  const handleIgnoreToggle = useCallback(
-    (itemPath) => {
-      setIgnoredItems((prev) => {
-        const newIgnored = new Set(prev);
-        if (newIgnored.has(itemPath)) {
-          newIgnored.delete(itemPath);
-        } else {
-          newIgnored.add(itemPath);
-        }
+  // Use useEffect to call onIgnoreChange when ignoredItems changes
+  useEffect(() => {
+    if (onIgnoreChange) {
+      onIgnoreChange(Array.from(ignoredItems));
+    }
+  }, [ignoredItems, onIgnoreChange]);
 
-        // Notify parent component about the change
-        if (onIgnoreChange) {
-          onIgnoreChange(Array.from(newIgnored));
-        }
-
-        return newIgnored;
-      });
-    },
-    [onIgnoreChange]
-  );
+  const handleIgnoreToggle = useCallback((itemPath) => {
+    setIgnoredItems((prev) => {
+      const newIgnored = new Set(prev);
+      if (newIgnored.has(itemPath)) {
+        newIgnored.delete(itemPath);
+      } else {
+        newIgnored.add(itemPath);
+      }
+      return newIgnored;
+    });
+  }, []);
 
   const handleClearAllIgnored = () => {
     setIgnoredItems(new Set());
-    if (onIgnoreChange) {
-      onIgnoreChange([]);
-    }
   };
 
   const isItemIgnored = (itemPath) => {

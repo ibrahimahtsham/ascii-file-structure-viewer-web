@@ -1,5 +1,5 @@
 import { Grid, Paper, Typography } from "@mui/material";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import FileTreeViewer from "../../../components/FileTreeViewer";
 import CodeStats from "../../../components/CodeStats";
 import AsciiTree from "../../../components/AsciiTree";
@@ -7,9 +7,9 @@ import AsciiTree from "../../../components/AsciiTree";
 function ResultsSection({ fileData }) {
   const [ignoredItems, setIgnoredItems] = useState([]);
 
-  const handleIgnoreChange = (newIgnoredItems) => {
+  const handleIgnoreChange = useCallback((newIgnoredItems) => {
     setIgnoredItems(newIgnoredItems);
-  };
+  }, []);
 
   if (!fileData) {
     return null;
