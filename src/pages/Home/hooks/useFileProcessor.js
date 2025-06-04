@@ -21,6 +21,7 @@ export const useFileProcessor = () => {
   const [debugLogs, setDebugLogs] = useState([]);
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
+  const [githubLoading, setGithubLoading] = useState(false); // Separate state for GitHub loading
   const fileInputRef = useRef(null);
 
   const addDebugLog = useCallback((message) => {
@@ -108,7 +109,7 @@ export const useFileProcessor = () => {
   const handleRepositorySelect = useCallback(
     async (repoUrl) => {
       setError(null);
-      setLoading(true);
+      setGithubLoading(true); // Use separate GitHub loading state
       setDebugLogs([]);
 
       addDebugLog(`🔗 Fetching repository: ${repoUrl}`);
@@ -119,9 +120,23 @@ export const useFileProcessor = () => {
 
         addDebugLog(`📂 Analyzing ${owner}/${repo}...`);
 
-        const files = await githubAPI.fetchAllFiles(owner, repo, (count) => {
-          addDebugLog(`📄 Fetched ${count} files...`);
-        });
+        const files = await githubAPI.fetchAllFiles(
+          owner,
+          repo,
+          (count, rateLimitInfo) => {
+            addDebugLog(`📄 Fetched ${count} files...`);
+            if (rateLimitInfo && rateLimitInfo.remaining !== null) {
+              addDebugLog(
+                `⏱️ Rate limit: ${rateLimitInfo.remaining} requests remaining`
+              );
+            }
+          },
+          (rateLimitInfo) => {
+            addDebugLog(
+              `⚠️ Rate limit warning: ${rateLimitInfo.remaining} requests remaining`
+            );
+          }
+        );
 
         addDebugLog(
           `✅ Successfully fetched ${files.length} files from GitHub`
@@ -130,13 +145,13 @@ export const useFileProcessor = () => {
         // Show selection modal for GitHub files too
         setPendingFiles(files);
         setShowSelectionModal(true);
-        setLoading(false);
       } catch (err) {
         const errorMessage = "Error fetching repository: " + err.message;
         setError(errorMessage);
         addDebugLog(`❌ ${errorMessage}`);
         console.error("GitHub fetch error:", err);
-        setLoading(false);
+      } finally {
+        setGithubLoading(false); // Reset GitHub loading state
       }
     },
     [addDebugLog]
@@ -154,7 +169,7 @@ export const useFileProcessor = () => {
   const handleSelectionCancel = useCallback(() => {
     setShowSelectionModal(false);
     setPendingFiles([]);
-    setLoading(false);
+    setGithubLoading(false); // Reset GitHub loading state on cancel
 
     // Clear file input
     if (fileInputRef.current) {
@@ -164,7 +179,8 @@ export const useFileProcessor = () => {
 
   return {
     fileData,
-    loading,
+    loading: loading || githubLoading, // Combine both loading states
+    githubLoading, // Expose separate GitHub loading state
     error,
     progress,
     debugLogs,

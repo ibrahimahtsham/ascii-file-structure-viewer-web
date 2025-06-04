@@ -11,9 +11,12 @@ import {
 } from "@mui/material";
 import { GitHub, Link } from "@mui/icons-material";
 
-function GitHubSection({ loading, onRepositorySelect }) {
+function GitHubSection({ loading, githubLoading, onRepositorySelect }) {
   const [repoUrl, setRepoUrl] = useState("");
   const [error, setError] = useState("");
+
+  // Only disable GitHub button when fetching from GitHub or processing files
+  const isGithubDisabled = githubLoading || loading;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,7 +70,7 @@ function GitHubSection({ loading, onRepositorySelect }) {
             placeholder="https://github.com/owner/repository or owner/repository"
             value={repoUrl}
             onChange={handleInputChange}
-            disabled={loading}
+            disabled={isGithubDisabled}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -88,8 +91,10 @@ function GitHubSection({ loading, onRepositorySelect }) {
             type="submit"
             variant="contained"
             size="large"
-            disabled={loading || !repoUrl.trim()}
-            startIcon={loading ? <CircularProgress size={20} /> : <GitHub />}
+            disabled={isGithubDisabled || !repoUrl.trim()}
+            startIcon={
+              githubLoading ? <CircularProgress size={20} /> : <GitHub />
+            }
             sx={{
               px: 4,
               py: 1.5,
@@ -97,12 +102,18 @@ function GitHubSection({ loading, onRepositorySelect }) {
               borderRadius: 2,
               transition: "all 0.3s ease",
               "&:hover": {
-                transform: loading ? "none" : "translateY(-2px)",
-                boxShadow: loading ? "none" : "0 4px 20px rgba(0,0,0,0.1)",
+                transform: isGithubDisabled ? "none" : "translateY(-2px)",
+                boxShadow: isGithubDisabled
+                  ? "none"
+                  : "0 4px 20px rgba(0,0,0,0.1)",
               },
             }}
           >
-            {loading ? "Analyzing Repository..." : "Analyze Repository"}
+            {githubLoading
+              ? "Fetching Repository..."
+              : loading
+              ? "Processing Files..."
+              : "Analyze Repository"}
           </Button>
         </Box>
 

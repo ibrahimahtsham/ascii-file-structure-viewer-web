@@ -12,6 +12,7 @@ function Home() {
   const {
     fileData,
     loading,
+    githubLoading,
     error,
     progress,
     debugLogs,
@@ -41,6 +42,7 @@ function Home() {
       <UploadSection
         fileInputRef={fileInputRef}
         loading={loading}
+        githubLoading={githubLoading}
         onFolderSelect={handleFolderSelect}
       />
 
@@ -54,6 +56,7 @@ function Home() {
 
       <GitHubSection
         loading={loading}
+        githubLoading={githubLoading}
         onRepositorySelect={handleRepositorySelect}
       />
 

@@ -8,7 +8,15 @@ import {
 import { Folder, CloudUpload } from "@mui/icons-material";
 import { MESSAGES } from "../utils/constants";
 
-function UploadSection({ fileInputRef, loading, onFolderSelect }) {
+function UploadSection({
+  fileInputRef,
+  loading,
+  githubLoading,
+  onFolderSelect,
+}) {
+  // Only disable upload button when actually processing files, not when fetching from GitHub
+  const isUploadDisabled = loading && !githubLoading;
+
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
       <Box sx={{ textAlign: "center" }}>
@@ -27,9 +35,13 @@ function UploadSection({ fileInputRef, loading, onFolderSelect }) {
             component="span"
             size="large"
             startIcon={
-              loading ? <CircularProgress size={20} /> : <CloudUpload />
+              isUploadDisabled ? (
+                <CircularProgress size={20} />
+              ) : (
+                <CloudUpload />
+              )
             }
-            disabled={loading}
+            disabled={isUploadDisabled}
             sx={{
               mb: 2,
               px: 4,
@@ -38,12 +50,14 @@ function UploadSection({ fileInputRef, loading, onFolderSelect }) {
               borderRadius: 2,
               transition: "all 0.3s ease",
               "&:hover": {
-                transform: loading ? "none" : "translateY(-2px)",
-                boxShadow: loading ? "none" : "0 4px 20px rgba(0,0,0,0.1)",
+                transform: isUploadDisabled ? "none" : "translateY(-2px)",
+                boxShadow: isUploadDisabled
+                  ? "none"
+                  : "0 4px 20px rgba(0,0,0,0.1)",
               },
             }}
           >
-            {loading ? MESSAGES.PROCESSING : MESSAGES.SELECT_PROJECT}
+            {isUploadDisabled ? MESSAGES.PROCESSING : MESSAGES.SELECT_PROJECT}
           </Button>
         </label>
         <Typography
