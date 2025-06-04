@@ -24,6 +24,19 @@ export const getFileIcon = (extension) => {
     ".dart": "🎯",
     ".vue": "💚",
     ".svelte": "🧡",
+    // Add missing file types
+    ".bat": "⚡",
+    ".cmd": "⚡",
+    ".sh": "🐚",
+    ".ps1": "💙",
+    ".svg": "🎨",
+    ".yml": "⚙️",
+    ".yaml": "⚙️",
+    ".gitignore": "🚫",
+    ".env": "🔧",
+    ".sql": "🗄️",
+    ".dockerfile": "🐳",
+    ".log": "📋",
   };
   return iconMap[extension] || "📄";
 };

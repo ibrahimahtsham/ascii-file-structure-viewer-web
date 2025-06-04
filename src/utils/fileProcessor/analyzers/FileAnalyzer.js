@@ -1,5 +1,5 @@
-import { PROCESSING_CONFIG } from "../utils/constants.js";
-import { getFileExtension, isSupportedFile } from "../utils/fileUtils.js";
+import { PROCESSING_CONFIG } from '../utils/constants.js';
+import { getFileExtension, isSupportedFile } from '../utils/fileUtils.js';
 
 export class FileAnalyzer {
   constructor() {
@@ -12,7 +12,17 @@ export class FileAnalyzer {
 
   shouldProcessContent(file) {
     const extension = getFileExtension(file.name);
-    return isSupportedFile(extension, file.size, this.config.MAX_CONTENT_SIZE);
+    // Always try to process supported files, regardless of size for text files
+    return isSupportedFile(extension, file.size, this.config.MAX_CONTENT_SIZE) ||
+           this.isSmallTextFile(file, extension);
+  }
+
+  isSmallTextFile(file, extension) {
+    // For small text files, always try to process them
+    const textExtensions = new Set([
+      ".bat", ".cmd", ".sh", ".ps1", ".gitignore", ".env", ".sql"
+    ]);
+    return textExtensions.has(extension) && file.size < 50 * 1024; // 50KB limit for text files
   }
 
   isLargeFile(file) {
@@ -21,7 +31,7 @@ export class FileAnalyzer {
 
   analyzeFile(file) {
     const extension = getFileExtension(file.name);
-
+    
     return {
       name: file.name,
       path: file.webkitRelativePath,
