@@ -1,7 +1,8 @@
-import { Container, Box, Typography, Alert } from "@mui/material";
+import { Container, Box, Typography, Alert, Divider } from "@mui/material";
 import { useFileProcessor } from "./hooks/useFileProcessor";
 import { useTimer } from "./hooks/useTimer";
 import UploadSection from "./components/UploadSection";
+import GitHubSection from "./components/GitHubSection";
 import ProgressSection from "./components/ProgressSection";
 import DebugConsole from "./components/DebugConsole";
 import ResultsSection from "./components/ResultsSection";
@@ -18,6 +19,7 @@ function Home() {
     showSelectionModal,
     pendingFiles,
     handleFolderSelect,
+    handleRepositorySelect,
     handleSelectionConfirm,
     handleSelectionCancel,
   } = useFileProcessor();
@@ -31,8 +33,8 @@ function Home() {
           ASCII File Structure Viewer
         </Typography>
         <Typography variant="h6" color="text.secondary" gutterBottom>
-          Upload a project folder to visualize its structure and analyze code
-          statistics
+          Upload a project folder or analyze a GitHub repository to visualize
+          its structure and analyze code statistics
         </Typography>
       </Box>
 
@@ -40,6 +42,19 @@ function Home() {
         fileInputRef={fileInputRef}
         loading={loading}
         onFolderSelect={handleFolderSelect}
+      />
+
+      <Box sx={{ display: "flex", alignItems: "center", my: 2 }}>
+        <Divider sx={{ flexGrow: 1 }} />
+        <Typography variant="body2" color="text.secondary" sx={{ mx: 2 }}>
+          OR
+        </Typography>
+        <Divider sx={{ flexGrow: 1 }} />
+      </Box>
+
+      <GitHubSection
+        loading={loading}
+        onRepositorySelect={handleRepositorySelect}
       />
 
       <FileSelectionModal

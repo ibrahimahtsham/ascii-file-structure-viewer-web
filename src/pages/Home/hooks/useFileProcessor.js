@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { FileProcessor } from "../../../utils/fileProcessor";
+import { GitHubAPI } from "../utils/github/GitHubAPI";
 import { UI_UPDATE_DELAY } from "../utils/constants";
 
 export const useFileProcessor = () => {
@@ -44,7 +45,7 @@ export const useFileProcessor = () => {
       });
 
       // Add first debug log immediately and force UI update
-      addDebugLog(`🎯 User selected ${files.length} files for processing`);
+      addDebugLog(`🎯 Processing ${files.length} files`);
       if (customIgnorePatterns.length > 0) {
         addDebugLog(
           `🚫 Using custom ignore patterns: ${customIgnorePatterns.join(", ")}`
@@ -104,6 +105,43 @@ export const useFileProcessor = () => {
     setShowSelectionModal(true);
   }, []);
 
+  const handleRepositorySelect = useCallback(
+    async (repoUrl) => {
+      setError(null);
+      setLoading(true);
+      setDebugLogs([]);
+
+      addDebugLog(`🔗 Fetching repository: ${repoUrl}`);
+
+      try {
+        const githubAPI = new GitHubAPI();
+        const { owner, repo } = githubAPI.parseRepositoryURL(repoUrl);
+
+        addDebugLog(`📂 Analyzing ${owner}/${repo}...`);
+
+        const files = await githubAPI.fetchAllFiles(owner, repo, (count) => {
+          addDebugLog(`📄 Fetched ${count} files...`);
+        });
+
+        addDebugLog(
+          `✅ Successfully fetched ${files.length} files from GitHub`
+        );
+
+        // Show selection modal for GitHub files too
+        setPendingFiles(files);
+        setShowSelectionModal(true);
+        setLoading(false);
+      } catch (err) {
+        const errorMessage = "Error fetching repository: " + err.message;
+        setError(errorMessage);
+        addDebugLog(`❌ ${errorMessage}`);
+        console.error("GitHub fetch error:", err);
+        setLoading(false);
+      }
+    },
+    [addDebugLog]
+  );
+
   const handleSelectionConfirm = useCallback(
     async (selectedFiles, ignorePatterns) => {
       setShowSelectionModal(false);
@@ -116,6 +154,7 @@ export const useFileProcessor = () => {
   const handleSelectionCancel = useCallback(() => {
     setShowSelectionModal(false);
     setPendingFiles([]);
+    setLoading(false);
 
     // Clear file input
     if (fileInputRef.current) {
@@ -133,6 +172,7 @@ export const useFileProcessor = () => {
     showSelectionModal,
     pendingFiles,
     handleFolderSelect,
+    handleRepositorySelect,
     handleSelectionConfirm,
     handleSelectionCancel,
   };
