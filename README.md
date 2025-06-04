@@ -51,7 +51,7 @@ _Direct GitHub repository analysis with rate limit monitoring_
 
 ## 🚀 Live Demo
 
-Visit the live application: [ASCII File Structure Viewer](https://your-deployed-url.com)
+Visit the live application: [ASCII File Structure Viewer]([https://your-deployed-url.com](https://ibrahimahtsham.github.io/ascii-file-structure-viewer-web/))
 
 ## 🛠️ Technologies Used
 
