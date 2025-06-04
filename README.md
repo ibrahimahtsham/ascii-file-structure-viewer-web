@@ -20,6 +20,7 @@ A modern web application built with React and Vite that visualizes project file 
 - **🌙 Dark/Light Theme**: Modern UI with theme switching
 - **⚡ Real-time Progress**: Live progress tracking during file processing
 - **🔍 Smart File Filtering**: Automatically handles binary files and large files
+- **⚠️ Rate Limit Monitoring**: Real-time GitHub API rate limit tracking and warnings
 
 ## 📸 Screenshots
 
@@ -57,7 +58,7 @@ Visit the live application: [ASCII File Structure Viewer](https://your-deployed-
 - **React 18** - Modern React with hooks
 - **Vite** - Fast build tool and development server
 - **Material-UI (MUI)** - Beautiful and accessible UI components
-- **GitHub API** - Direct repository analysis
+- **GitHub API** - Direct repository analysis with rate limiting
 - **File API** - Local file system access
 
 ## 📦 Installation & Quick Start
@@ -67,7 +68,7 @@ Visit the live application: [ASCII File Structure Viewer](https://your-deployed-
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ascii-file-structure-viewer-web.git
+git clone https://github.com/ibrahimahtsham/ascii-file-structure-viewer-web.git
 cd ascii-file-structure-viewer-web
 ```
 
@@ -101,7 +102,7 @@ If you prefer to install manually:
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ascii-file-structure-viewer-web.git
+git clone https://github.com/ibrahimahtsham/ascii-file-structure-viewer-web.git
 cd ascii-file-structure-viewer-web
 ```
 
@@ -132,7 +133,15 @@ npm run dev
 
 1. Enter a GitHub repository URL (e.g., `facebook/react` or `https://github.com/facebook/react`)
 2. The app will automatically fetch and analyze the repository
-3. Customize the output with various display options
+3. Monitor rate limit usage in real-time
+4. Customize the output with various display options
+
+### GitHub API Rate Limits
+
+- **Unauthenticated**: 60 requests per hour
+- **With Personal Access Token**: 5,000 requests per hour (coming soon)
+- Real-time rate limit monitoring shows remaining requests
+- Automatic delays when approaching limits
 
 ### Customization Options
 
@@ -152,6 +161,14 @@ src/
 │   └── ThemeToggle.jsx     # Dark/light theme switcher
 ├── pages/
 │   └── Home/               # Main application page
+│       ├── components/
+│       │   ├── GithubSection.jsx     # GitHub repository input
+│       │   └── ProgressSection/      # Progress tracking components
+│       ├── hooks/
+│       │   └── useFileProcessor.js   # File processing logic
+│       └── utils/
+│           └── github/
+│               └── GitHubAPI/        # GitHub API integration
 ├── utils/
 │   └── fileProcessor/      # File processing and analysis utilities
 ├── theme/                  # Material-UI theme configuration
@@ -176,10 +193,50 @@ Or use the helper scripts:
 
 The application supports various configuration options:
 
-- **File Size Limits**: Configurable maximum file sizes for processing
-- **Supported Extensions**: Customizable list of supported file types
-- **GitHub API**: Built-in rate limiting and error handling
-- **Processing Options**: Batch processing with progress tracking
+- **File Size Limits**: Configurable maximum file sizes for processing (1MB default for GitHub files)
+- **Supported Extensions**: Comprehensive list of supported file types with MIME type detection
+- **GitHub API**: Built-in rate limiting, error handling, and progress tracking
+- **Processing Options**: Batch processing with real-time progress updates
+
+## 📋 Roadmap
+
+### 🔜 Coming Soon
+
+- [ ] **GitHub Authentication** - Sign in with GitHub for 5,000 requests/hour
+- [ ] **Private Repository Support** - Access private repositories with authentication
+- [ ] **Enhanced Rate Limit Management** - Better handling of API quotas
+- [ ] **Repository Caching** - Cache analyzed repositories to reduce API calls
+
+### 🚀 Future Features
+
+- [ ] **Export Options** - PDF, PNG, SVG export of ASCII trees
+- [ ] **Custom Styling** - Personalize ASCII tree appearance
+- [ ] **Comparison Mode** - Compare multiple repositories side-by-side
+- [ ] **API Integration** - REST API for programmatic access
+- [ ] **Collaboration Features** - Share and collaborate on repository analyses
+- [ ] **Advanced Filtering** - More sophisticated file filtering options
+
+### 🔧 Technical Improvements
+
+- [ ] **Performance Optimization** - Faster processing for large repositories
+- [ ] **Better Binary Detection** - Improved binary file handling
+- [ ] **Progressive Loading** - Stream results as they're processed
+- [ ] **Offline Mode** - Work with previously analyzed repositories offline
+
+## 🔑 GitHub Authentication (Coming Soon)
+
+To increase your API rate limit from 60 to 5,000 requests per hour:
+
+1. **Sign in with GitHub** - Use OAuth to authenticate
+2. **Generate Personal Access Token** - Create a token with repository access
+3. **Enhanced Features** - Access private repositories and higher rate limits
+
+**Benefits of Authentication:**
+
+- 🚀 **83x more API requests** (5,000 vs 60 per hour)
+- 🔒 **Private repository access**
+- 📊 **Better rate limit management**
+- ⚡ **Faster repository analysis**
 
 ## 🤝 Contributing
 
@@ -193,9 +250,10 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## 🐛 Known Issues
 
-- Large repositories may take some time to process
-- GitHub API rate limits apply (60 requests per hour for unauthenticated users)
+- Large repositories may take time to process due to API rate limits
+- GitHub API rate limits apply (60 requests/hour for unauthenticated users)
 - Some binary files may not be properly detected
+- Very deep directory structures may hit recursion limits
 
 ## 📄 License
 
@@ -205,12 +263,14 @@ This project is licensed under the MIT License.
 
 - Built with [Vite](https://vitejs.dev/) and [React](https://reactjs.org/)
 - UI components from [Material-UI](https://mui.com/)
-- GitHub API for repository access
+- GitHub API for repository access with comprehensive rate limiting
 - Icons from [Material Icons](https://fonts.google.com/icons)
+- Real-time progress tracking and error handling
 
 ## 📞 Support
 
 If you have any questions or need help, please:
 
-- Open an issue on GitHub
-- Contact the maintainers
+- 🐛 **Report Issues**: [Open an issue on GitHub](https://github.com/ibrahimahtsham/ascii-file-structure-viewer-web/issues)
+- 📖 **Documentation**: Check our [Wiki](https://github.com/ibrahimahtsham/ascii-file-structure-viewer-web/wiki)
+- 📧 **Direct Contact**: Reach out to the maintainers
