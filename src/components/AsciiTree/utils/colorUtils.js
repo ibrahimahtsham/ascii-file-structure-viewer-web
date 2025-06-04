@@ -12,7 +12,7 @@ export const COLOR_LEGEND_CONFIG = [
     type: "folder",
     label: "📁 Folders",
     tooltip: "Folders",
-    color: "#FFA726",
+    color: "#FFA726", // Orange - kept the same
   },
   {
     type: "empty",
@@ -36,7 +36,7 @@ export const COLOR_LEGEND_CONFIG = [
     type: "large",
     label: "📄 Large",
     tooltip: "Large files (301-500 lines)",
-    color: "#FF9800",
+    color: "#9C27B0", // Purple - changed from orange to purple
   },
   {
     type: "huge",
@@ -48,7 +48,7 @@ export const COLOR_LEGEND_CONFIG = [
 
 export const TREE_STYLES = (showColors) => ({
   "& .folder": {
-    color: showColors ? "#FFA726" : "inherit",
+    color: showColors ? "#FFA726" : "inherit", // Orange - folders
   },
   "& .file-empty": {
     color: showColors ? "#9E9E9E" : "inherit",
@@ -60,7 +60,7 @@ export const TREE_STYLES = (showColors) => ({
     color: showColors ? "#2196F3" : "inherit",
   },
   "& .file-large": {
-    color: showColors ? "#FF9800" : "inherit",
+    color: showColors ? "#9C27B0" : "inherit", // Purple - large files
   },
   "& .file-huge": {
     color: showColors ? "#F44336" : "inherit",
