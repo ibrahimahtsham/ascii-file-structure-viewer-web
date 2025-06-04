@@ -1,5 +1,6 @@
-import { Paper, Typography, Box } from "@mui/material";
-import { AccountTree } from "@mui/icons-material";
+import { Paper, Typography, Box, Button, Snackbar, Alert } from "@mui/material";
+import { AccountTree, ContentCopy } from "@mui/icons-material";
+import { useState } from "react";
 import { useTreeControls } from "./hooks/useTreeControls";
 import { useTreeGeneration } from "./hooks/useTreeGeneration";
 import { useTreeStats } from "./hooks/useTreeStats";
@@ -10,6 +11,7 @@ import TreeDisplay from "./components/TreeDisplay";
 
 function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
   const { showLines, showColors, showSizes, handleToggle } = useTreeControls();
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const enhancedTree = useTreeGeneration({
     treeData,
@@ -21,6 +23,33 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
   });
 
   const stats = useTreeStats(treeData, ignoredItems);
+
+  const handleCopyToClipboard = async () => {
+    try {
+      // Remove HTML tags from the enhanced tree for plain text copy
+      const plainTextTree = enhancedTree.replace(/<[^>]*>/g, "");
+      await navigator.clipboard.writeText(plainTextTree);
+      setCopySuccess(true);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+      // Fallback for older browsers
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = enhancedTree.replace(/<[^>]*>/g, "");
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        setCopySuccess(true);
+      } catch (fallbackErr) {
+        console.error("Fallback copy failed:", fallbackErr);
+      }
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setCopySuccess(false);
+  };
 
   if (!asciiTree && !treeData) {
     return (
@@ -35,14 +64,29 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
 
   return (
     <Paper sx={{ p: 2 }}>
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{ display: "flex", alignItems: "center" }}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 2,
+        }}
       >
-        <AccountTree sx={{ mr: 1 }} />
-        ASCII Tree View
-      </Typography>
+        <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
+          <AccountTree sx={{ mr: 1 }} />
+          ASCII Tree View
+        </Typography>
+
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<ContentCopy />}
+          onClick={handleCopyToClipboard}
+          sx={{ minWidth: "auto" }}
+        >
+          Copy Tree
+        </Button>
+      </Box>
 
       <TreeControls
         showLines={showLines}
@@ -56,6 +100,21 @@ function AsciiTree({ asciiTree, treeData, ignoredItems = [] }) {
       <ColorLegend showColors={showColors} />
 
       <TreeDisplay content={enhancedTree} showColors={showColors} />
+
+      <Snackbar
+        open={copySuccess}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          ASCII tree copied to clipboard!
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 }
